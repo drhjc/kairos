@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/34588148/README.md)
 # kairos schedule bot
 
 A study planner that builds students' study schedules around their classes, work, and life. Everything runs in the student's own browser: plans are saved on their device, and nothing is sent to a server.
