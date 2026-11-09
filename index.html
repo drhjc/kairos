@@ -134,8 +134,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .banner .row{display:flex;flex-wrap:wrap;gap:8px}
 .banner.warn{background:var(--warn-soft)}
 .mvguide{margin:4px 0 2px;font-size:.9rem}
-.mvguide summary{cursor:pointer;font-weight:600;color:var(--accent)}
+.installsteps{font-size:.95rem}
+.installsteps ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px}
 .mvguide ol{margin:4px 0 0;padding-left:1.3em;display:flex;flex-direction:column;gap:4px}
+.installsteps .help{margin-top:10px}
+.mvguide summary{cursor:pointer;font-weight:600;color:var(--accent)}
+.installsteps ol,.mvguide ol{margin:4px 0 0;padding-left:1.3em;display:flex;flex-direction:column;gap:4px}
 .learnlist{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:.86rem}
 .learnlist li{display:flex;gap:10px;align-items:baseline;justify-content:space-between}
 
@@ -554,6 +558,10 @@ body.has-pill .toast{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
     <p id="backupMsg"></p>
     <div class="row"><button id="bbNow" class="btn primary small" type="button">Back up now</button><button id="bbLater" class="btn small" type="button">Remind me later</button></div>
   </div>
+  <div id="installBanner" class="banner" hidden>
+    <p>Add kairos to your home screen so it opens like an app, even without internet.</p>
+    <div class="row"><button id="ibGo" class="btn primary small" type="button">Show me how</button><button id="ibLater" class="btn small" type="button">Not now</button><button id="ibNever" class="linkbtn" type="button">Don’t show again</button></div>
+  </div>
   <div id="learnBanner" class="banner" hidden>
     <p id="learnMsg"></p>
     <div class="row"><button id="lbYes" class="btn primary small" type="button">Yes, adjust</button><button id="lbNo" class="btn small" type="button">Not now</button></div>
@@ -867,6 +875,12 @@ body.has-pill .toast{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
     <div class="sect">
       <h4>Back up or move your plan</h4>
       <p class="meta">Your plan lives only in this browser, and clearing browser data erases it. Keep a backup file, or copy a code to paste into this page on another device.</p>
+      <details class="mvguide"><summary>Put kairos on your phone’s home screen</summary>
+        <p class="help" style="margin:6px 0 4px">It opens like an app and works without internet.</p>
+        <p style="margin:6px 0 2px"><b>iPhone or iPad</b></p><ol><li>Open this page in <b>Safari</b>.</li><li>Tap the <b>Share</b> button (a square with an arrow pointing up). In newer versions of Safari, tap <b>•••</b> first to find it.</li><li>Tap <b>Add to Home Screen</b>, then <b>Add</b>.</li></ol><p class="help">On iPhone, the home-screen app keeps its own copy of your plan, separate from Safari. If you already made a plan in Safari, back it up there (<b>Settings</b>, then <b>Download backup file</b>), then open the home-screen app and restore it.</p>
+        <p style="margin:8px 0 2px"><b>Android</b></p><ol><li>Open this page in <b>Chrome</b>.</li><li>Tap <b>⋮</b> in the top-right corner.</li><li>Tap <b>Add to Home screen</b> or <b>Install app</b>, then <b>Install</b>.</li></ol><p class="help">Your plan carries over to the home-screen app.</p>
+        <p class="help" style="margin-top:6px"><b>On a computer:</b> in Chrome or Edge, look for <b>Install</b> in the browser’s menu or at the right end of the address bar.</p>
+      </details>
       <details class="mvguide"><summary>Use kairos on another device</summary>
         <p class="help" style="margin:6px 0 4px">Your plan doesn’t sync on its own. Here’s how to move it, for example from your laptop to your phone.</p>
         <ol>
@@ -947,6 +961,14 @@ body.has-pill .toast{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
     <header><h3 id="catchH">Catch-up plan</h3><p class="meta">Here’s what’s realistic right now, and what you can do about the rest.</p></header>
     <div id="catchBody" class="catch"></div>
     <div class="dlg-actions" style="justify-content:flex-end"><button class="btn primary" type="button" data-close>Done</button></div>
+  </div>
+</dialog>
+
+<dialog id="dlgInstall" aria-labelledby="installH">
+  <div class="dlg">
+    <header><h3 id="installH">Put kairos on your home screen</h3><p class="meta">It opens like an app and works without internet once it’s installed.</p></header>
+    <div id="installSteps" class="installsteps"></div>
+    <div class="dlg-actions" style="justify-content:flex-end"><button class="btn primary" type="button" data-close>Got it</button></div>
   </div>
 </dialog>
 
@@ -1806,7 +1828,7 @@ function render(){
   $('#exampleBanner').hidden = !st.example;
   $('#storageNote').hidden = storageOK;
   renderBackupBanner(); renderLearnBanner();
-  renderToday(now); renderWeek(now); renderTasks(now); renderBusy(); renderCatchBanner();
+  renderToday(now); renderWeek(now); renderTasks(now); renderBusy(); renderCatchBanner(); renderInstallBanner();
 }
 
 function renderToday(now){
@@ -1979,6 +2001,34 @@ function renderCatchBanner(){
 }
 $('#cbNo').addEventListener('click', () => { st.meta.catchSnooze = Date.now() + 3*864e5; st.meta.catchN = catchData(new Date()).won.length; save(); renderCatchBanner(); toast('Okay. It’s under Assignments whenever you want it.'); });
 $('#whyCatch').addEventListener('click', () => { $('#dlgWhy').close(); openCatch(); });
+/* ---------- Home-screen install (GitHub edition) ---------- */
+const INST_KEY = KEY+':install', INSTALL_STEPS = {"ios": "<ol><li>Open this page in <b>Safari</b>.</li><li>Tap the <b>Share</b> button (a square with an arrow pointing up). In newer versions of Safari, tap <b>•••</b> first to find it.</li><li>Tap <b>Add to Home Screen</b>, then <b>Add</b>.</li></ol><p class=\"help\">On iPhone, the home-screen app keeps its own copy of your plan, separate from Safari. If you already made a plan in Safari, back it up there (<b>Settings</b>, then <b>Download backup file</b>), then open the home-screen app and restore it.</p>", "android": "<ol><li>Open this page in <b>Chrome</b>.</li><li>Tap <b>⋮</b> in the top-right corner.</li><li>Tap <b>Add to Home screen</b> or <b>Install app</b>, then <b>Install</b>.</li></ol><p class=\"help\">Your plan carries over to the home-screen app.</p>"};
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; renderInstallBanner(); });
+window.addEventListener('appinstalled', () => { installEvt = null; try { localStorage.setItem(INST_KEY, 'never'); } catch(e){} renderInstallBanner(); });
+function isInstalled(){ try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch(e){ return false; } }
+function phoneKind(){ const u = navigator.userAgent || ''; if (/iPhone|iPod/.test(u) || (/iPad|Macintosh/.test(u) && navigator.maxTouchPoints > 1)) return 'ios'; if (/Android/.test(u)) return 'android'; return null; }
+function renderInstallBanner(){
+  let v = null; try { v = localStorage.getItem(INST_KEY); } catch(e){}
+  const show = !!phoneKind() && !isInstalled() && v !== 'never' && !(v && Date.now() < +v)
+    && !document.querySelector('dialog[open]') && $('#backupBanner').hidden && $('#learnBanner').hidden && $('#catchBanner').hidden;
+  $('#installBanner').hidden = !show;
+  $('#ibGo').textContent = installEvt ? 'Install kairos' : 'Show me how';
+}
+function setInst(v){ try { localStorage.setItem(INST_KEY, v); } catch(e){} renderInstallBanner(); }
+$('#ibGo').addEventListener('click', async () => {
+  if (installEvt){
+    const ev = installEvt; installEvt = null; ev.prompt();
+    try { const c = await ev.userChoice; if (c && c.outcome === 'accepted') setInst('never'); } catch(e){}
+    renderInstallBanner(); return;
+  }
+  $('#installSteps').innerHTML = INSTALL_STEPS[phoneKind() || 'ios'];
+  openDlg($('#dlgInstall'));
+});
+$('#ibLater').addEventListener('click', () => setInst(String(Date.now() + 7*864e5)));
+$('#ibNever').addEventListener('click', () => { setInst('never'); toast('Okay. The steps are in Settings if you change your mind.'); });
+$('#dlgInstall').addEventListener('close', () => setInst(String(Date.now() + 7*864e5)));
+$('#dlgTour').addEventListener('close', () => setTimeout(renderInstallBanner, 50));
 function aheadOptions(now){
   const d1 = ymd(addDays(sod(now), 1)), d2 = ymd(addDays(sod(now), 2)), seen = new Set(), out = [];
   for (const p of plan.placed){
@@ -4034,7 +4084,7 @@ const TOUR = [
   {h:'Follow the plan', b:'<p>The planner fills your open time with study sessions, earliest deadline first. Press <b>Start</b> on a session for a focus timer with a break built in, or just check sessions off under <b>Today</b> as you finish. Want reminders on your phone? <b>Export to calendar</b> adds your deadlines and sessions to Google, Apple, or Outlook calendar.</p><p>Can’t make a session? Open it and choose <b>Push session forward</b> to move it to your next open time. Missed sessions move forward on their own.</p>'},
   {h:'When you’re running behind', b:'<p>If an assignment won’t fit before it’s due, its card tells you how short it is. <b>Crunch mode</b> puts it ahead of everything else and finds every open minute.</p><p>Assignment cards and sessions also link to campus help, like the Writing Center, Supplemental Instruction, and Drop-In Tutoring.</p>'},
   {h:'Make it fit how you work', b:'<p>Open <b>Settings</b> anytime to change:</p><ul><li><b>Your day:</b> when it starts and ends, the most study hours in a day, and time off you want kept free</li><li><b>Sessions:</b> how long they are, breaks between them, and travel time between commitments, or Pomodoro timing</li><li><b>Time estimates:</b> whether things usually take you more or less time than most people</li><li><b>Deadlines:</b> whether to finish homework, writing, and projects early, and how late crunch mode can run</li><li><b>Tracking:</b> to-do, stages, or detailed steps for new assignments, plus Writing Center suggestions</li></ul>'},
-  {h:'Your plan stays on this device', b:'<p>Everything is saved in this browser only. Nobody else can see it, including your instructor.</p><p>To use your plan on another device, copy a backup code from <b>Settings</b>. You can reopen this guide anytime with <b>How to use</b>.</p>'}
+  {h:'Your plan stays on this device', b:'<p>Everything is saved in this browser only. Nobody else can see it, including your instructor.</p><p>To use your plan on another device, copy a backup code from <b>Settings</b>.</p><p>On a phone? Add kairos to your home screen so it opens like an app. <b>Settings</b> shows you how.</p><p>You can reopen this guide anytime with <b>How to use</b>.</p>'}
 ];
 let tourI = 0;
 const TOUR_KEY = KEY+':tour-hidden';
@@ -4093,6 +4143,7 @@ document.addEventListener('click', e => {
 render();
 setInterval(render, 60000);
 if (!tourHidden()) openTour(); else maybeRecap();
+renderInstallBanner();
 restoreFocus();
 })();
 </script>
